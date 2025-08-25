@@ -73,10 +73,14 @@
       <updated>1756120016646</updated>
       <workItem from="1756120017672" duration="1139000" />
       <workItem from="1756121464294" duration="6000" />
+      <workItem from="1756121474405" duration="875000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName="Jenkinsfile" />
   </component>
 </project>
