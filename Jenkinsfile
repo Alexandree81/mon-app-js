@@ -7,6 +7,10 @@ pipeline {
         NODE_VERSION = '18'
         APP_NAME = 'mon-app-js'
         DEPLOY_DIR = '/Users/alexandre/Dev/WebstormProjects/mon-app-js'
+        SERVER_SCRIPT = 'server.js'
+        SERVER_LOG    = 'server.log'
+        SERVER_PID    = 'server.pid'
+        LOCAL_PORT    = '5050'
     }
 
     stages {
@@ -87,27 +91,34 @@ pipeline {
 
         stage('Deploy to Production') {
             when {
-                branch 'main'
+                anyOf {
+                    branch 'main'
+                    expression { return !env.BRANCH_NAME } // job non-multibranch
+                }
             }
             steps {
-                echo 'Déploiement vers la production...'
+                echo 'Démarrage local avec server.js...'
                 sh '''
-                    echo "Sauvegarde de la version précédente..."
-                    if [ -d "${DEPLOY_DIR}" ]; then
-                        cp -r ${DEPLOY_DIR} ${DEPLOY_DIR}_backup_$(date +%Y%m%d_%H%M%S)
+                set -e
+                # Stop propre si déjà lancé
+                if [ -f "$SERVER_PID" ]; then
+                    OLD_PID=$(cat "$SERVER_PID" || true)
+                    if [ -n "$OLD_PID" ] && ps -p "$OLD_PID" > /dev/null 2>&1; then
+                    echo "Arrêt de l'ancien serveur (PID=$OLD_PID)"
+                     kill "$OLD_PID" || true
+                    sleep 1
                     fi
+                    rm -f "$SERVER_PID"
+                fi
 
-                    echo "Déploiement de la nouvelle version..."
-                    mkdir -p ${DEPLOY_DIR}
-                    cp -r dist/* ${DEPLOY_DIR}/
-
-                    echo "Vérification du déploiement..."
-                    ls -la ${DEPLOY_DIR}
+                echo "Lancement: node $SERVER_SCRIPT (PORT=$LOCAL_PORT)"
+                PORT=$LOCAL_PORT nohup node "$SERVER_SCRIPT" > "$SERVER_LOG" 2>&1 & echo $! > "$SERVER_PID"
+                echo "Serveur démarré. PID=$(cat "$SERVER_PID")"
                 '''
             }
         }
 
-        stage('Health Check') {
+        /*stage('Health Check') {
             steps {
                 echo 'Vérification de santé de l\'application...'
                 script {
@@ -117,6 +128,20 @@ pipeline {
                             # Simulation d'un health check
                             echo "Application déployée avec succès"
                         '''
+                    } catch (Exception e) {
+                        currentBuild.result = 'UNSTABLE'
+                        echo "Warning: Health check failed: ${e.getMessage()}"
+                    }
+                }
+            }
+        }*/
+
+        stage('Health Check') {
+            steps {
+                script {
+                    try {
+                        sh 'curl -fsS "http://127.0.0.1:${LOCAL_PORT}/health" | tee health.json'
+                        echo "Application accessible en local ✅"
                     } catch (Exception e) {
                         currentBuild.result = 'UNSTABLE'
                         echo "Warning: Health check failed: ${e.getMessage()}"
