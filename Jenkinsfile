@@ -22,21 +22,14 @@ pipeline {
         }
 
         stage('Install Dependencies') {
-          steps {
-            echo 'Installation des dépendances Node.js...'
-            sh '''
-              node --version
-              npm --version
-
-              if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
-                echo "Lockfile trouvé → npm ci"
-                npm ci
-              else
-                echo "⚠️ Aucun lockfile → fallback npm install (et génération du lockfile local)"
-                npm install
-              fi
-            '''
-          }
+            steps {
+                echo 'Installation des dépendances Node.js...'
+                sh '''
+                    node --version
+                    npm --version
+                    npm ci
+                '''
+            }
         }
 
         stage('Run Tests') {
