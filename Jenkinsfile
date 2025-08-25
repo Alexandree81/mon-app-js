@@ -1,7 +1,7 @@
 pipeline {
     agent any
 
-    tools { nodejs 'Node18' } // <-- Définis "Node18" dans Global Tool Configuration
+    tools { nodejs 'NodeJS-18' }
 
     environment {
         NODE_VERSION = '18'
