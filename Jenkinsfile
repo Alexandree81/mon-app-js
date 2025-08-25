@@ -109,6 +109,7 @@ pipeline {
         stage('Deploy to Production') {
             when {
                 branch 'main'
+                expression { return !env.BRANCH_NAME }
             }
             steps {
                 echo 'Démarrage local avec server.js...'
