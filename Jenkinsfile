@@ -108,8 +108,10 @@ pipeline {
         }*/
         stage('Deploy to Production') {
             when {
-                branch 'main'
-                expression { return !env.BRANCH_NAME }
+                anyOf {
+                    branch 'main'
+                    expression { return !env.BRANCH_NAME } // BRANCH_NAME nul/vidé → job simple
+                }
             }
             steps {
                 echo 'Démarrage local avec server.js...'
