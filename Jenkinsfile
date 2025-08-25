@@ -39,8 +39,8 @@ pipeline {
             }
             post {
                 always {
-                    // Si tu utilises JUnit, remplace par: junit 'test-results.xml'
-                    publishTestResults testResultsPattern: 'test-results.xml'
+                    // Publie les résultats JUnit s’ils existent, sans faire échouer si absent
+                    junit testResults: 'test-results.xml', allowEmptyResults: true
                 }
             }
         }
