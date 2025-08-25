@@ -6,9 +6,6 @@ pipeline {
     environment {
         NODE_VERSION = '18'
         APP_NAME = 'mon-app-js'
-        SERVER_SCRIPT = 'server.js'
-        SERVER_LOG = 'server.log'
-        SERVER_PID = 'server.pid'
     }
 
     stages {
@@ -121,7 +118,7 @@ pipeline {
                     pkill -f "node server.js" || true
 
                     # Lancement en arrière-plan
-                    nohup node server.js > server.log 2>&1 &
+                    nohup node server.js
 
                     echo "Serveur démarré avec server.js"
                 '''
