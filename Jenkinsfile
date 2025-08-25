@@ -107,26 +107,31 @@ pipeline {
             }
         }*/
         stage('Deploy to Production') {
-            when {
-                anyOf {
-                    branch 'main'
-                    expression { return !env.BRANCH_NAME } // BRANCH_NAME nul/vidé → job simple
-                }
+          when {
+            anyOf {
+              branch 'main'
+              expression { return !env.BRANCH_NAME } // BRANCH_NAME nul/vidé → job simple
             }
-            steps {
-                echo 'Démarrage local avec server.js...'
-                sh '''
-                    set -e
+          }
+          steps {
+            echo 'Démarrage local avec server.js...'
+            sh '''
+              set -e
+              # Arrêt propre si déjà lancé
+              if [ -f "server.pid" ]; then
+                OLD_PID=$(cat server.pid || true)
+                if [ -n "$OLD_PID" ] && ps -p "$OLD_PID" > /dev/null 2>&1; then
+                  echo "Arrêt de l'ancien serveur (PID=$OLD_PID)"
+                  kill $OLD_PID || true
+                fi
+                rm -f server.pid
+              fi
 
-                    # Arrêt d’un éventuel ancien serveur
-                    pkill -f "node server.js" || true
-
-                    # Lancement en arrière-plan
-                    nohup node server.js
-
-                    echo "Serveur démarré avec server.js"
-                '''
-            }
+              echo "Lancement: node server.js"
+              nohup node server.js > server.log 2>&1 & echo $! > server.pid
+              echo "Serveur démarré. PID=$(cat server.pid)"
+            '''
+          }
         }
 
         stage('Health Check') {
