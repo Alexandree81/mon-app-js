@@ -71,7 +71,7 @@ pipeline {
             }
         }
 
-        /*stage('Deploy to Staging') {
+        stage('Deploy to Staging') {
             when {
                 branch 'develop'
             }
@@ -83,9 +83,12 @@ pipeline {
                     cp -r dist/* staging/
                 '''
             }
-        }*/
+        }
 
         stage('Deploy to Production') {
+            when {
+                branch 'main'
+            }
             steps {
                 echo 'Déploiement vers la production...'
                 sh '''
