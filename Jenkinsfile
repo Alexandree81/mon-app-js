@@ -7,6 +7,7 @@ pipeline {
         NODE_VERSION = '18'
         APP_NAME = 'mon-app-js'
         DEPLOY_DIR = '/Users/alexandre/Dev/WebstormProjects/mon-app-js'
+        LOCAL_PORT = '3000'
     }
 
     stages {
