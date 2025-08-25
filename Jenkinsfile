@@ -6,7 +6,9 @@ pipeline {
     environment {
         NODE_VERSION = '18'
         APP_NAME = 'mon-app-js'
-        DEPLOY_DIR = '/Dev/WebstormProjects/mon-app-js'
+        SERVER_SCRIPT = 'server.js'
+        SERVER_LOG = 'server.log'
+        SERVER_PID = 'server.pid'
     }
 
     stages {
@@ -85,7 +87,7 @@ pipeline {
             }
         }
 
-        stage('Deploy to Production') {
+        /*stage('Deploy to Production') {
             when {
                 branch 'main'
             }
@@ -103,6 +105,25 @@ pipeline {
 
                     echo "Vérification du déploiement..."
                     ls -la ${DEPLOY_DIR}
+                '''
+            }
+        }*/
+        stage('Deploy to Production') {
+            when {
+                branch 'main'
+            }
+            steps {
+                echo 'Démarrage local avec server.js...'
+                sh '''
+                    set -e
+
+                    # Arrêt d’un éventuel ancien serveur
+                    pkill -f "node server.js" || true
+
+                    # Lancement en arrière-plan
+                    nohup node server.js > server.log 2>&1 &
+
+                    echo "Serveur démarré avec server.js"
                 '''
             }
         }
