@@ -7,10 +7,6 @@ pipeline {
         NODE_VERSION = '18'
         APP_NAME = 'mon-app-js'
         DEPLOY_DIR = '/Users/alexandre/Dev/WebstormProjects/mon-app-js'
-        SERVER_SCRIPT = 'server.js'
-        SERVER_LOG    = 'server.log'
-        SERVER_PID    = 'server.pid'
-        LOCAL_PORT    = '5050'
     }
 
     stages {
@@ -90,25 +86,27 @@ pipeline {
         }
 
         stage('Deploy to Production') {
-            /*when {
-                branch 'main'
-            }*/
-            steps {
-                echo 'Déploiement vers la production...'
-                sh '''
-                    echo "Sauvegarde de la version précédente..."
-                    if [ -d "${DEPLOY_DIR}" ]; then
-                        cp -r ${DEPLOY_DIR} ${DEPLOY_DIR}_backup_$(date +%Y%m%d_%H%M%S)
-                    fi
+          when { anyOf { branch 'main'; expression { !env.BRANCH_NAME } } }
+          steps {
+            echo 'Démarrage local depuis le workspace…'
+            sh '''
+              set -e
+              # stop propre
+              if [ -f server.pid ]; then
+                OLD_PID=$(cat server.pid || true)
+                if [ -n "$OLD_PID" ] && ps -p "$OLD_PID" > /dev/null 2>&1; then
+                  kill "$OLD_PID" || true
+                  sleep 1
+                fi
+                rm -f server.pid
+              fi
 
-                    echo "Déploiement de la nouvelle version..."
-                    mkdir -p ${DEPLOY_DIR}
-                    cp -r dist/* ${DEPLOY_DIR}/
-
-                    echo "Vérification du déploiement..."
-                    ls -la ${DEPLOY_DIR}
-                '''
-            }
+              # lancer server.js (qui sert dist/)
+              echo "Lancement: node server.js (PORT=$LOCAL_PORT)"
+              PORT="$LOCAL_PORT" nohup node server.js > server.log 2>&1 & echo $! > server.pid
+              echo "Serveur démarré. PID=$(cat server.pid)"
+            '''
+          }
         }
 
         /*stage('Deploy to Production') {
