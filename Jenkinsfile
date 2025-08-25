@@ -72,97 +72,36 @@ pipeline {
             }
         }
 
-        stage('Deploy to Staging') {
-            when {
-                branch 'develop'
-            }
-            steps {
-                echo 'Déploiement vers l\'environnement de staging...'
-                sh '''
-                    echo "Déploiement staging simulé"
-                    mkdir -p staging
-                    cp -r dist/* staging/
-                '''
-            }
-        }
-
         stage('Deploy to Production') {
-          when { anyOf { branch 'main'; expression { !env.BRANCH_NAME } } }
-          steps {
-            echo 'Démarrage local depuis le workspace…'
-            sh '''
-              set -e
-              # stop propre
-              if [ -f server.pid ]; then
-                OLD_PID=$(cat server.pid || true)
-                if [ -n "$OLD_PID" ] && ps -p "$OLD_PID" > /dev/null 2>&1; then
-                  kill "$OLD_PID" || true
-                  sleep 1
-                fi
-                rm -f server.pid
-              fi
-
-              # lancer server.js (qui sert dist/)
-              echo "Lancement: node server.js (PORT=$LOCAL_PORT)"
-              PORT="$LOCAL_PORT" nohup node server.js > server.log 2>&1 & echo $! > server.pid
-              echo "Serveur démarré. PID=$(cat server.pid)"
-            '''
-          }
-        }
-
-        /*stage('Deploy to Production') {
-            when {
-                anyOf {
-                    branch 'main'
-                    expression { return !env.BRANCH_NAME } // job non-multibranch
-                }
-            }
+            when { anyOf { branch 'main'; expression { !env.BRANCH_NAME } } }
             steps {
-                echo 'Démarrage local avec server.js...'
+                echo 'Démarrage local depuis le workspace…'
                 sh '''
                 set -e
-                # Stop propre si déjà lancé
-                if [ -f "$SERVER_PID" ]; then
-                    OLD_PID=$(cat "$SERVER_PID" || true)
+                # stop propre
+                if [ -f server.pid ]; then
+                    OLD_PID=$(cat server.pid || true)
                     if [ -n "$OLD_PID" ] && ps -p "$OLD_PID" > /dev/null 2>&1; then
-                    echo "Arrêt de l'ancien serveur (PID=$OLD_PID)"
-                     kill "$OLD_PID" || true
+                       kill "$OLD_PID" || true
                     sleep 1
                     fi
-                    rm -f "$SERVER_PID"
+                    rm -f server.pid
                 fi
 
-                echo "Lancement: node $SERVER_SCRIPT (PORT=$LOCAL_PORT)"
-                PORT=$LOCAL_PORT nohup node "$SERVER_SCRIPT" > "$SERVER_LOG" 2>&1 & echo $! > "$SERVER_PID"
-                echo "Serveur démarré. PID=$(cat "$SERVER_PID")"
+                 # lancer server.js (qui sert dist/)
+                echo "Lancement: node server.js (PORT=$LOCAL_PORT)"
+                PORT="$LOCAL_PORT" nohup node server.js > server.log 2>&1 & echo $! > server.pid
+                echo "Serveur démarré. PID=$(cat server.pid)"
                 '''
             }
-        }*/
-
-        /*stage('Health Check') {
-            steps {
-                echo 'Vérification de santé de l\'application...'
-                script {
-                    try {
-                        sh '''
-                            echo "Test de connectivité..."
-                            # Simulation d'un health check
-                            echo "Application déployée avec succès"
-                        '''
-                    } catch (Exception e) {
-                        currentBuild.result = 'UNSTABLE'
-                        echo "Warning: Health check failed: ${e.getMessage()}"
-                    }
-                }
-            }
-        }*/
+        }
 
         stage('Health Check') {
             steps {
                 script {
                     try {
                         sh 'curl -fsS "http://127.0.0.1:${LOCAL_PORT}/health" | tee health.json'
-                        echo "Application accessible en local ✅"
+                        echo "Application accessible en local"
                     } catch (Exception e) {
                         currentBuild.result = 'UNSTABLE'
                         echo "Warning: Health check failed: ${e.getMessage()}"
