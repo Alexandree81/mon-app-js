@@ -23,11 +23,7 @@ pipeline {
                 sh '''
                     node --version
                     npm --version
-                    if [ -f package-lock.json ]; then
-                      npm ci
-                    else
-                      npm install
-                    fi
+                    npm ci
                 '''
             }
         }
@@ -39,7 +35,6 @@ pipeline {
             }
             post {
                 always {
-                    // Publie les résultats JUnit s’ils existent, sans faire échouer si absent
                     junit testResults: 'test-results.xml', allowEmptyResults: true
                 }
             }
@@ -50,11 +45,7 @@ pipeline {
                 echo 'Vérification de la qualité du code...'
                 sh '''
                     echo "Vérification de la syntaxe JavaScript..."
-                    if [ -d src ]; then
-                      find src -name "*.js" -exec node --check {} \\;
-                    else
-                      echo "Dossier src absent — skip"
-                    fi
+                    find src -name "*.js" -exec node -c {} \\;
                     echo "Vérification terminée"
                 '''
             }
@@ -65,11 +56,7 @@ pipeline {
                 echo 'Construction de l\'application...'
                 sh '''
                     npm run build
-                    if [ -d dist ]; then
-                      ls -la dist/
-                    else
-                      echo "⚠️  Dossier dist absent après build"
-                    fi
+                    ls -la dist/
                 '''
             }
         }
@@ -79,7 +66,7 @@ pipeline {
                 echo 'Analyse de sécurité...'
                 sh '''
                     echo "Vérification des dépendances..."
-                    npm audit --audit-level=high || true
+                    npm audit --audit-level=high
                 '''
             }
         }
@@ -93,11 +80,7 @@ pipeline {
                 sh '''
                     echo "Déploiement staging simulé"
                     mkdir -p staging
-                    if [ -d dist ]; then
-                      cp -r dist/* staging/
-                    else
-                      echo "⚠️  Pas de dist à déployer en staging"
-                    fi
+                    cp -r dist/* staging/
                 '''
             }
         }
@@ -116,11 +99,7 @@ pipeline {
 
                     echo "Déploiement de la nouvelle version..."
                     mkdir -p ${DEPLOY_DIR}
-                    if [ -d dist ]; then
-                      cp -r dist/* ${DEPLOY_DIR}/
-                    else
-                      echo "⚠️  Pas de dist à copier — déploiement inchangé"
-                    fi
+                    cp -r dist/* ${DEPLOY_DIR}/
 
                     echo "Vérification du déploiement..."
                     ls -la ${DEPLOY_DIR}
